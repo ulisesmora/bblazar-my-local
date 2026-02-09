@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app  # Para que los cambios en código se vean en caliente
+    env_file:
+      - .env
+    # En desarrollo sobrescribimos el comando para tener auto-reload
+    command: granian --interface asgi --host 0.0.0.0 --port 8000 --reload app.main:app
