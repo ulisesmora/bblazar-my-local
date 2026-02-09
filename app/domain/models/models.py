@@ -118,6 +118,7 @@ class Business(TimestampModel, table=True):
     
     settings: dict | None = Field(default_factory=dict, sa_column=Column(JSON))
     
+    wallets: list["Wallet"] = Relationship(back_populates="business")
     # Relaciones
     owner: User = Relationship(back_populates="owned_businesses")
     categories: list["Category"] = Relationship(back_populates="business")
