@@ -7,7 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.v1.endpoints import users
+from app.api.v1.endpoints import (
+    business,
+    catalog,
+    inventory,
+    knowledgeSource,
+    order,
+    review,
+    staff,
+    subscription,
+    users,
+    wallet,
+)
 from app.core.config import settings
 from app.infrastructure.database.database import engine
 
@@ -104,10 +115,74 @@ async def health_check():
 api_router = APIRouter()
 
 # Configuración modular de rutas con sus respectivos tags para la documentación OpenAPI
+# 1. Usuarios y Autenticación
 api_router.include_router(
     users.router, 
     prefix="/users", 
     tags=["Identidad y Usuarios"]
+)
+
+# 2. Negocios y Horarios
+api_router.include_router(
+    business.router, 
+    prefix="/business", 
+    tags=["Negocios Asociados"]
+)
+
+# 3. Personal (Staff)
+api_router.include_router(
+    staff.router, 
+    prefix="/staff", 
+    tags=["Personal (Staff)"]
+)
+
+# 4. Catálogo (Categorías y Productos)
+api_router.include_router(
+    catalog.router, # O como hayas llamado a tu archivo (ej. items.router)
+    prefix="/catalog", 
+    tags=["Catálogo y Productos"]
+)
+
+# 5. Inventario Diario
+api_router.include_router(
+    inventory.router, 
+    prefix="/inventory", 
+    tags=["Inventario y Disponibilidad"]
+)
+
+# 6. Finanzas y Billetera Virtual
+api_router.include_router(
+    wallet.router, # O finances.router
+    prefix="/wallets", 
+    tags=["Finanzas y Monedero"]
+)
+
+# 7. Pedidos (Órdenes)
+api_router.include_router(
+    order.router, 
+    prefix="/orders", 
+    tags=["Pedidos (Órdenes)"]
+)
+
+# 8. Suscripciones
+api_router.include_router(
+    subscription.router, 
+    prefix="/subscriptions", 
+    tags=["Suscripciones y Membresías"]
+)
+
+# 9. Reseñas y Calificaciones
+api_router.include_router(
+    review.router, 
+    prefix="/reviews", 
+    tags=["Reseñas y Calificaciones"]
+)
+
+# 10. Base de Conocimiento para IA (MCP)
+api_router.include_router(
+    knowledgeSource.router, 
+    prefix="/knowledge", 
+    tags=["Base de Conocimiento IA (MCP)"]
 )
 
 

@@ -1,11 +1,14 @@
 import uuid
+from collections.abc import Sequence
 from datetime import date
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 from app.application.services.BaseService import BaseService
 from app.domain.models.models import DailyInventory
+from app.domain.schemas.inventory import InventoryCreate
 from app.domain.services.service import IInventoryService
 from app.infrastructure.repositories.base import BaseRepository
 
@@ -21,6 +24,45 @@ class InventoryService(BaseService[DailyInventory], IInventoryService):
         self.inventory_repo = BaseRepository(DailyInventory, db)
         # Inicializamos BaseService para permitir operaciones CRUD sobre el historial de inventario
         super().__init__(self.inventory_repo)
+
+    async def create_inventory(self, data: InventoryCreate) -> DailyInventory:
+        """
+        Registra el inventario diario. 
+        Valida que no exista ya un registro para ese producto en esa fecha.
+        """
+        existing = await self.get_by_item_and_date(data.item_id, data.date)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Ya existe un registro de inventario para este producto en la fecha {data.date}."
+            )
+            
+        new_inventory = DailyInventory(**data.model_dump())
+        return await self.create(new_inventory)
+
+    async def get_by_item_and_date(self, item_id: uuid.UUID, target_date: date) -> DailyInventory | None:
+        """
+        Busca el stock exacto de un producto en un día específico.
+        """
+        statement = select(DailyInventory).where(
+            DailyInventory.item_id == item_id,
+            DailyInventory.date == target_date,
+            DailyInventory.deleted_at == None
+        )
+        result = await self.db.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def get_history_by_item(self, item_id: uuid.UUID) -> Sequence[DailyInventory]:
+        """
+        Obtiene todo el historial de inventario de un producto ordenado por fecha (más reciente primero).
+        """
+        statement = select(DailyInventory).where(
+            DailyInventory.item_id == item_id,
+            DailyInventory.deleted_at == None
+        ).order_by(col(DailyInventory.date).desc())
+        
+        result = await self.db.execute(statement)
+        return result.scalars().all()
 
     async def set_daily_stock(self, item_id: uuid.UUID, target_date: date, quantity: int) -> DailyInventory:
         """

@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Generic, TypeVar
 
@@ -10,14 +10,22 @@ from app.domain.models.models import (
     Category,
     DailyInventory,
     Item,
+    ItemReview,
+    KnowledgeSource,
     Order,
+    OrderItem,
+    OrderReview,
+    OrderStatus,
     Staff,
+    StaffReview,
+    Subscription,
+    SubscriptionItem,
+    SubscriptionPayment,
     Wallet,
 )
 from app.domain.schemas.auth import LoginRequest, SocialLoginRequest, Token
 from app.domain.schemas.business import BusinessCreate
 from app.domain.schemas.category import CategoryCreate, ItemCreate
-from app.domain.schemas.orders import OrderCreate
 
 ModelType = TypeVar("ModelType")
 
@@ -144,20 +152,35 @@ class IInventoryService(ABC):
     async def check_availability(self, item_id: uuid.UUID, target_date: date, requested_qty: int) -> bool:
         """Verifica si existe stock suficiente antes de procesar una orden."""
         pass
-
 class IOrderService(ABC):
     """
-    Contrato para el procesamiento de órdenes.
-    Es el servicio más complejo ya que orquesta Wallet, Inventory y Catalog.
+    Contrato para el servicio de Pedidos.
+    Define las operaciones exclusivas de base de datos para la entidad Order.
     """
+    
     @abstractmethod
-    async def create_order(self, user_id: uuid.UUID, data: OrderCreate) -> Order:
-        """Coordina el cobro en Wallet, descuento de stock y registro del pedido."""
+    async def save_full_order(self, new_order: Order, items: list[OrderItem]) -> Order:
+        """Guarda la cabecera del pedido y sus líneas de detalle atómicamente."""
+        pass
+
+    @abstractmethod
+    async def get_order_with_items(self, order_id: uuid.UUID) -> Order | None:
+        """Obtiene un pedido incluyendo todas sus líneas de detalle (Eager Loading)."""
+        pass
+
+    @abstractmethod
+    async def update_order_status(self, order_id: uuid.UUID, new_status: OrderStatus) -> Order:
+        """Actualiza el estado de un pedido."""
+        pass
+
+    @abstractmethod
+    async def get_business_orders(self, business_id: uuid.UUID, status_filter: OrderStatus | None = None) -> Sequence[Order]:
+        """Obtiene el listado de pedidos de un negocio, filtrable por estado."""
         pass
 
     @abstractmethod
     async def get_user_orders(self, user_id: uuid.UUID) -> Sequence[Order]:
-        """Obtiene el historial de compras del usuario."""
+        """Obtiene el historial de compras de un usuario."""
         pass
     
     
@@ -174,4 +197,87 @@ class IStaffService(ABC):
     
     @abstractmethod
     async def toggle_staff_status(self, staff_id: uuid.UUID) -> Staff:
+        pass
+    
+
+class ISubscriptionService(ABC):
+    """
+    Contrato para el servicio de Suscripciones.
+    Define las operaciones exclusivas de base de datos para membresías y pagos recurrentes.
+    """
+    
+    @abstractmethod
+    async def create_full_subscription(self, new_subscription: Subscription, items: list[SubscriptionItem]) -> Subscription:
+        """Guarda la cabecera de la suscripción y sus detalles atómicamente."""
+        pass
+
+    @abstractmethod
+    async def get_subscription_with_items(self, subscription_id: uuid.UUID) -> Subscription | None:
+        """Obtiene una suscripción incluyendo sus planes/items."""
+        pass
+
+    @abstractmethod
+    async def update_status(self, subscription_id: uuid.UUID, new_status: str, period_end: datetime | None = None) -> Subscription:
+        """Actualiza el estado de la suscripción (ej. active, canceled, past_due)."""
+        pass
+
+    @abstractmethod
+    async def record_payment(self, payment_data: dict) -> SubscriptionPayment:
+        """Registra un cobro exitoso o fallido en el historial de la suscripción."""
+        pass
+
+    @abstractmethod
+    async def get_user_subscriptions(self, user_id: uuid.UUID) -> Sequence[Subscription]:
+        """Obtiene todas las suscripciones de un usuario."""
+        pass
+
+    @abstractmethod
+    async def get_business_subscriptions(self, business_id: uuid.UUID, active_only: bool = True) -> Sequence[Subscription]:
+        """Obtiene las suscripciones de un negocio (útil para reportes)."""
+        pass
+    
+    
+
+class IReviewService(ABC):
+    """Contrato para gestionar los 3 tipos de reseñas del sistema."""
+    
+    @abstractmethod
+    async def create_order_review(self, review: OrderReview) -> OrderReview:
+        pass
+
+    @abstractmethod
+    async def get_business_reviews(self, business_id: uuid.UUID) -> Sequence[OrderReview]:
+        pass
+
+    @abstractmethod
+    async def create_item_review(self, review: ItemReview) -> ItemReview:
+        pass
+
+    @abstractmethod
+    async def get_item_reviews(self, item_id: uuid.UUID) -> Sequence[ItemReview]:
+        pass
+
+    @abstractmethod
+    async def create_staff_review(self, review: StaffReview) -> StaffReview:
+        pass
+
+    @abstractmethod
+    async def get_staff_reviews(self, staff_id: uuid.UUID) -> Sequence[StaffReview]:
+        pass
+    
+
+class IKnowledgeService(ABC):
+    """
+    Contrato para el servicio de Base de Conocimiento (IA).
+    Define las operaciones específicas para gestionar los documentos que alimentan al RAG.
+    """
+    
+    @abstractmethod
+    async def get_business_sources(self, business_id: uuid.UUID, active_only: bool = True) -> Sequence[KnowledgeSource]:
+        """Obtiene la lista de documentos y enlaces asociados a un negocio."""
+        pass
+
+    @abstractmethod
+    async def mark_as_indexed(self, source_id: uuid.UUID) -> KnowledgeSource:
+        """Actualiza la fecha de última indexación (last_indexed_at) cuando la IA procesa el documento."""
         pass

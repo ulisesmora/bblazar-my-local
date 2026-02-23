@@ -263,7 +263,6 @@ class Subscription(TimestampModel, table=True):
     pickup_time: time
     is_active: bool = Field(default=True)
     last_generated_date: date | None = None
-    
     user: User = Relationship(back_populates="subscriptions")
     business: Business = Relationship(back_populates="subscriptions")
     items: list["SubscriptionItem"] = Relationship(back_populates="subscription")
@@ -274,7 +273,7 @@ class SubscriptionItem(TimestampModel, table=True):
     subscription_id: uuid.UUID = Field(foreign_key="subscription.id")
     item_id: uuid.UUID = Field(foreign_key="item.id")
     quantity: int = Field(default=1)
-    
+    unit_price: Decimal =  Field(nullable=True) 
     subscription: Subscription = Relationship(back_populates="items")
     item: Item = Relationship(back_populates="subscription_items")
 

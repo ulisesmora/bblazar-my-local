@@ -1,4 +1,5 @@
 import uuid
+from datetime import time
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -43,5 +44,28 @@ class BusinessRead(BusinessBase):
     owner_id: uuid.UUID
     ai_enabled: bool
     ai_assistant_name: str
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    
+
+class BusinessHourBase(BaseModel):
+    day_of_week: int  # 0=Lunes, 1=Martes, etc. (o como lo decidas en tu frontend)
+    open_time: time
+    close_time: time
+    slot_capacity: int = 5
+
+class BusinessHourCreate(BusinessHourBase):
+    business_id: uuid.UUID
+
+class BusinessHourUpdate(BaseModel):
+    day_of_week: int | None = None
+    open_time: time | None = None
+    close_time: time | None = None
+    slot_capacity: int | None = None
+
+class BusinessHourRead(BusinessHourBase):
+    id: uuid.UUID
+    business_id: uuid.UUID
     
     model_config = ConfigDict(from_attributes=True)

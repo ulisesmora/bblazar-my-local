@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Generic, TypeVar
 
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel, select
 
@@ -41,7 +42,7 @@ class BaseRepository(IBaseRepository[ModelType], Generic[ModelType]):  # noqa: U
     async def update(
         self, 
         db_obj: ModelType, 
-        obj_in: ModelType | dict[str, Any]
+        obj_in: ModelType | dict[str, Any] | BaseModel
     ) -> ModelType:
         """
         Actualiza un registro existente de forma parcial o total.

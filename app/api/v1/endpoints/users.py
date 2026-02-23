@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.command.Users import UserCommands
 from app.application.query.Users import UserQueries
-from app.domain.schemas.users import UserCreate, UserRead
+from app.domain.schemas.users import UserCreate, UserRead, UserUpdate
 from app.infrastructure.database.database import get_session
 
 # 1. AQUÍ NACE: Definimos la variable 'router' que luego importaremos
@@ -38,3 +38,21 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.patch("/{user_id}", response_model=UserRead)
+async def update_user(
+    user_id: uuid.UUID, 
+    data: UserUpdate, 
+    db: AsyncSession = Depends(get_session)
+) -> Any:
+    command = UserCommands(db) 
+    return await command.update_profile(user_id,data)
+
+
+@router.delete("/{user_id}", response_model=bool)
+async def delete_user(
+    user_id: uuid.UUID, 
+    db: AsyncSession = Depends(get_session)
+) -> Any:
+    command = UserCommands(db) 
+    return await command.delete_user(user_id)

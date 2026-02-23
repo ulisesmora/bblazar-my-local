@@ -13,6 +13,11 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     business_id: uuid.UUID
+    
+
+class CategoryUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
 
 class CategoryRead(CategoryBase):
     id: uuid.UUID
@@ -33,6 +38,17 @@ class ItemBase(BaseModel):
 class ItemCreate(ItemBase):
     business_id: uuid.UUID
     category_id: uuid.UUID
+    
+
+class ItemUpdate(BaseModel):
+    # Todos opcionales para permitir PATCH
+    name: str | None = None
+    description: str | None = None
+    image_url: str | None = None
+    price: Decimal | None = None
+    type: ItemType | None = None
+    is_subscription_eligible: bool | None = None
+    category_id: uuid.UUID | None = None # Por si quieren mover el producto de categoría
 
 class ItemRead(ItemBase):
     id: uuid.UUID

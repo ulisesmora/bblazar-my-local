@@ -1,14 +1,16 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.services.BaseService import BaseService
 from app.core.security.security import create_access_token, verify_password
 from app.core.security.SocialAuthService import SocialAuthService
+from app.domain.models.models import User
 from app.domain.schemas.auth import LoginRequest, SocialLoginRequest, Token
 from app.domain.services.service import IAuthService
 from app.infrastructure.repositories.user_repo import UserRepository
 
 
-class AuthService(IAuthService):
+class AuthService(BaseService[User],IAuthService):
     """
     Implementación del servicio de autenticación siguiendo el contrato IAuthService.
     Se encarga de la validación de credenciales y la emisión de tokens JWT.

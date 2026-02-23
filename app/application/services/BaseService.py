@@ -31,4 +31,7 @@ class BaseService(IService[ModelType], Generic[ModelType]):
         return await self.repository.update(db_obj, data)
 
     async def delete(self, id: uuid.UUID) -> bool:
+        db_obj = await self.get_by_id(id)
+        if not db_obj:
+            raise ValueError("Registro no encontrado")
         return await self.repository.delete(id)
